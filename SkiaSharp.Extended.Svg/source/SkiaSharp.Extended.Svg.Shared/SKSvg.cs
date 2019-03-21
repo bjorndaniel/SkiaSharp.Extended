@@ -32,23 +32,17 @@ namespace SkiaSharp.Extended.Svg
 		private readonly XmlReaderSettings xmlReaderSettings = new XmlReaderSettings()
 		{
 			DtdProcessing = DtdProcessing.Ignore,
-			IgnoreComments = true,
+				IgnoreComments = true,
 		};
 
-		public SKSvg()
-			: this(DefaultPPI, SKSize.Empty)
-		{
-		}
+		public SKSvg() : this(DefaultPPI, SKSize.Empty)
+		{ }
 
-		public SKSvg(float pixelsPerInch)
-			: this(pixelsPerInch, SKSize.Empty)
-		{
-		}
+		public SKSvg(float pixelsPerInch) : this(pixelsPerInch, SKSize.Empty)
+		{ }
 
-		public SKSvg(SKSize canvasSize)
-			: this(DefaultPPI, canvasSize)
-		{
-		}
+		public SKSvg(SKSize canvasSize) : this(DefaultPPI, canvasSize)
+		{ }
 
 		public SKSvg(float pixelsPerInch, SKSize canvasSize)
 		{
@@ -73,9 +67,11 @@ namespace SkiaSharp.Extended.Svg
 
 		public string Version { get; private set; }
 
+		public SKTypeface CustomTypeFace { get; set; }
+
 		public SKPicture Load(string filename)
 		{
-			using (var stream = File.OpenRead(filename))
+			using(var stream = File.OpenRead(filename))
 			{
 				return Load(stream);
 			}
@@ -83,7 +79,7 @@ namespace SkiaSharp.Extended.Svg
 
 		public SKPicture Load(Stream stream)
 		{
-			using (var reader = XmlReader.Create(stream, xmlReaderSettings, CreateSvgXmlContext()))
+			using(var reader = XmlReader.Create(stream, xmlReaderSettings, CreateSvgXmlContext()))
 			{
 				return Load(reader);
 			}
@@ -161,8 +157,8 @@ namespace SkiaSharp.Extended.Svg
 			}
 
 			// create the picture from the elements
-			using (var recorder = new SKPictureRecorder())
-			using (var canvas = recorder.BeginRecording(SKRect.Create(CanvasSize)))
+			using(var recorder = new SKPictureRecorder())
+			using(var canvas = recorder.BeginRecording(SKRect.Create(CanvasSize)))
 			{
 				// if there is no viewbox, then we don't do anything, otherwise
 				// scale the SVG dimensions to fit inside the user dimensions
@@ -245,7 +241,7 @@ namespace SkiaSharp.Extended.Svg
 						var image = ReadImage(e);
 						if (image.Bytes != null)
 						{
-							using (var bitmap = SKBitmap.Decode(image.Bytes))
+							using(var bitmap = SKBitmap.Decode(image.Bytes))
 							{
 								if (bitmap != null)
 								{
@@ -301,7 +297,7 @@ namespace SkiaSharp.Extended.Svg
 						float groupOpacity = ReadOpacity(style);
 						if (groupOpacity != 1.0f)
 						{
-							var opacity = (byte)(255 * groupOpacity);
+							var opacity = (byte) (255 * groupOpacity);
 							var opacityPaint = new SKPaint
 							{
 								Color = SKColors.Black.WithAlpha(opacity)
@@ -529,7 +525,7 @@ namespace SkiaSharp.Extended.Svg
 			// textAlign is used for all spans within the <text> element. If different textAligns would be needed, it is necessary to use
 			// several <text> elements instead of <tspan> elements
 			var currentBaselineShift = baselineShift;
-			fill.TextAlign = SKTextAlign.Left;  // fixed alignment for all spans
+			fill.TextAlign = SKTextAlign.Left; // fixed alignment for all spans
 
 			var nodes = e.Nodes().ToArray();
 			for (int i = 0; i < nodes.Length; i++)
@@ -542,7 +538,7 @@ namespace SkiaSharp.Extended.Svg
 				{
 					// TODO: check for preserve whitespace
 
-					var textSegments = ((XText)c).Value.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+					var textSegments = ((XText) c).Value.Split(new [] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
 					var count = textSegments.Length;
 					if (count > 0)
 					{
@@ -552,12 +548,12 @@ namespace SkiaSharp.Extended.Svg
 							textSegments[count - 1] = textSegments[count - 1].TrimEnd();
 						var text = WSRe.Replace(string.Concat(textSegments), " ");
 
-						spans.Append(new SKTextSpan(text, fill.Clone(), baselineShift: currentBaselineShift));
+						spans.Append(new SKTextSpan(text, fill.Clone(), baselineShift : currentBaselineShift));
 					}
 				}
 				else if (c.NodeType == XmlNodeType.Element)
 				{
-					var ce = (XElement)c;
+					var ce = (XElement) c;
 					if (ce.Name.LocalName == "tspan")
 					{
 						// the current span may want to change the cursor position
@@ -582,11 +578,19 @@ namespace SkiaSharp.Extended.Svg
 		private void ReadFontAttributes(XElement e, SKPaint paint)
 		{
 			var fontStyle = ReadStyle(e);
+			if (CustomTypeFace != null)
+			{
+				paint.Typeface = CustomTypeFace;
+				if (fontStyle?.ContainsKey("font-family") ?? false)
+				{
+					fontStyle.Remove("font-family");
+				}
+			}
 
 			if (fontStyle == null || !fontStyle.TryGetValue("font-family", out string ffamily) || string.IsNullOrWhiteSpace(ffamily))
 				ffamily = paint.Typeface?.FamilyName;
-			var fweight = ReadFontWeight(fontStyle, paint.Typeface?.FontWeight ?? (int)SKFontStyleWeight.Normal);
-			var fwidth = ReadFontWidth(fontStyle, paint.Typeface?.FontWidth ?? (int)SKFontStyleWidth.Normal);
+			var fweight = ReadFontWeight(fontStyle, paint.Typeface?.FontWeight ?? (int) SKFontStyleWeight.Normal);
+			var fwidth = ReadFontWidth(fontStyle, paint.Typeface?.FontWidth ?? (int) SKFontStyleWidth.Normal);
 			var fstyle = ReadFontStyle(fontStyle, paint.Typeface?.FontSlant ?? SKFontStyleSlant.Upright);
 
 			paint.Typeface = SKTypeface.FromFamilyName(ffamily, fweight, fwidth, fstyle);
@@ -644,7 +648,7 @@ namespace SkiaSharp.Extended.Svg
 			return style;
 		}
 
-		private int ReadFontWidth(Dictionary<string, string> fontStyle, int defaultWidth = (int)SKFontStyleWidth.Normal)
+		private int ReadFontWidth(Dictionary<string, string> fontStyle, int defaultWidth = (int) SKFontStyleWidth.Normal)
 		{
 			var width = defaultWidth;
 			if (fontStyle != null && fontStyle.TryGetValue("font-stretch", out string fwidth) && !string.IsNullOrWhiteSpace(fwidth) && !int.TryParse(fwidth, out width))
@@ -652,31 +656,31 @@ namespace SkiaSharp.Extended.Svg
 				switch (fwidth)
 				{
 					case "ultra-condensed":
-						width = (int)SKFontStyleWidth.UltraCondensed;
+						width = (int) SKFontStyleWidth.UltraCondensed;
 						break;
 					case "extra-condensed":
-						width = (int)SKFontStyleWidth.ExtraCondensed;
+						width = (int) SKFontStyleWidth.ExtraCondensed;
 						break;
 					case "condensed":
-						width = (int)SKFontStyleWidth.Condensed;
+						width = (int) SKFontStyleWidth.Condensed;
 						break;
 					case "semi-condensed":
-						width = (int)SKFontStyleWidth.SemiCondensed;
+						width = (int) SKFontStyleWidth.SemiCondensed;
 						break;
 					case "normal":
-						width = (int)SKFontStyleWidth.Normal;
+						width = (int) SKFontStyleWidth.Normal;
 						break;
 					case "semi-expanded":
-						width = (int)SKFontStyleWidth.SemiExpanded;
+						width = (int) SKFontStyleWidth.SemiExpanded;
 						break;
 					case "expanded":
-						width = (int)SKFontStyleWidth.Expanded;
+						width = (int) SKFontStyleWidth.Expanded;
 						break;
 					case "extra-expanded":
-						width = (int)SKFontStyleWidth.ExtraExpanded;
+						width = (int) SKFontStyleWidth.ExtraExpanded;
 						break;
 					case "ultra-expanded":
-						width = (int)SKFontStyleWidth.UltraExpanded;
+						width = (int) SKFontStyleWidth.UltraExpanded;
 						break;
 					case "wider":
 						width = width + 1;
@@ -690,10 +694,10 @@ namespace SkiaSharp.Extended.Svg
 				}
 			}
 
-			return Math.Min(Math.Max((int)SKFontStyleWidth.UltraCondensed, width), (int)SKFontStyleWidth.UltraExpanded);
+			return Math.Min(Math.Max((int) SKFontStyleWidth.UltraCondensed, width), (int) SKFontStyleWidth.UltraExpanded);
 		}
 
-		private int ReadFontWeight(Dictionary<string, string> fontStyle, int defaultWeight = (int)SKFontStyleWeight.Normal)
+		private int ReadFontWeight(Dictionary<string, string> fontStyle, int defaultWeight = (int) SKFontStyleWeight.Normal)
 		{
 			var weight = defaultWeight;
 
@@ -702,10 +706,10 @@ namespace SkiaSharp.Extended.Svg
 				switch (fweight)
 				{
 					case "normal":
-						weight = (int)SKFontStyleWeight.Normal;
+						weight = (int) SKFontStyleWeight.Normal;
 						break;
 					case "bold":
-						weight = (int)SKFontStyleWeight.Bold;
+						weight = (int) SKFontStyleWeight.Bold;
 						break;
 					case "bolder":
 						weight = weight + 100;
@@ -719,7 +723,7 @@ namespace SkiaSharp.Extended.Svg
 				}
 			}
 
-			return Math.Min(Math.Max((int)SKFontStyleWeight.Thin, weight), (int)SKFontStyleWeight.ExtraBlack);
+			return Math.Min(Math.Max((int) SKFontStyleWeight.Thin, weight), (int) SKFontStyleWeight.ExtraBlack);
 		}
 
 		private void LogOrThrow(string message)
@@ -740,7 +744,7 @@ namespace SkiaSharp.Extended.Svg
 		private Dictionary<string, string> ReadStyle(string style)
 		{
 			var d = new Dictionary<string, string>();
-			var kvs = style.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+			var kvs = style.Split(new [] { ';' }, StringSplitOptions.RemoveEmptyEntries);
 			foreach (var kv in kvs)
 			{
 				var m = keyValueRe.Match(kv);
@@ -776,7 +780,7 @@ namespace SkiaSharp.Extended.Svg
 		private static bool HasSvgNamespace(XName name)
 		{
 			return
-				string.IsNullOrEmpty(name.Namespace?.NamespaceName) ||
+			string.IsNullOrEmpty(name.Namespace?.NamespaceName) ||
 				name.Namespace == svg ||
 				name.Namespace == xlink;
 		}
@@ -899,7 +903,7 @@ namespace SkiaSharp.Extended.Svg
 					else
 					{
 						// get the dash
-						var dashesStrings = strokeDashArray.Split(new[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries);
+						var dashesStrings = strokeDashArray.Split(new [] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries);
 						var dashes = dashesStrings.Select(ReadNumber).ToArray();
 						if (dashesStrings.Length % 2 == 1)
 							dashes = dashes.Concat(dashes).ToArray();
@@ -915,7 +919,7 @@ namespace SkiaSharp.Extended.Svg
 				if (hasStrokeWidth)
 					strokePaint.StrokeWidth = ReadNumber(strokeWidth);
 				if (hasStrokeOpacity)
-					strokePaint.Color = strokePaint.Color.WithAlpha((byte)(ReadNumber(strokeOpacity) * 255));
+					strokePaint.Color = strokePaint.Color.WithAlpha((byte) (ReadNumber(strokeOpacity) * 255));
 				if (hasStrokeLineCap)
 					strokePaint.StrokeCap = ReadLineCap(strokeLineCap);
 				if (hasStrokeLineJoin)
@@ -923,7 +927,7 @@ namespace SkiaSharp.Extended.Svg
 				if (hasStrokeMiterLimit)
 					strokePaint.StrokeMiter = ReadNumber(strokeMiterLimit);
 				if (strokePaint != null)
-					strokePaint.Color = strokePaint.Color.WithAlpha((byte)(strokePaint.Color.Alpha * elementOpacity));
+					strokePaint.Color = strokePaint.Color.WithAlpha((byte) (strokePaint.Color.Alpha * elementOpacity));
 			}
 
 			// fill
@@ -994,12 +998,12 @@ namespace SkiaSharp.Extended.Svg
 					if (fillPaint == null)
 						fillPaint = CreatePaint();
 
-					fillPaint.Color = fillPaint.Color.WithAlpha((byte)(ReadNumber(fillOpacity) * 255));
+					fillPaint.Color = fillPaint.Color.WithAlpha((byte) (ReadNumber(fillOpacity) * 255));
 				}
 
 				if (fillPaint != null)
 				{
-					fillPaint.Color = fillPaint.Color.WithAlpha((byte)(fillPaint.Color.Alpha * elementOpacity));
+					fillPaint.Color = fillPaint.Color.WithAlpha((byte) (fillPaint.Color.Alpha * elementOpacity));
 				}
 			}
 		}
@@ -1039,8 +1043,8 @@ namespace SkiaSharp.Extended.Svg
 			var strokePaint = new SKPaint
 			{
 				IsAntialias = true,
-				IsStroke = stroke,
-				Color = stroke ? SKColors.Transparent : SKColors.Black
+					IsStroke = stroke,
+					Color = stroke ? SKColors.Transparent : SKColors.Black
 			};
 
 			if (stroke)
@@ -1063,10 +1067,10 @@ namespace SkiaSharp.Extended.Svg
 				return t;
 			}
 
-			var calls = raw.Trim().Split(new[] { ')' }, StringSplitOptions.RemoveEmptyEntries);
+			var calls = raw.Trim().Split(new [] { ')' }, StringSplitOptions.RemoveEmptyEntries);
 			foreach (var c in calls)
 			{
-				var args = c.Split(new[] { '(', ',', ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+				var args = c.Split(new [] { '(', ',', ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
 				var nt = SKMatrix.MakeIdentity();
 				switch (args[0])
 				{
@@ -1076,8 +1080,8 @@ namespace SkiaSharp.Extended.Svg
 							nt.Values = new float[]
 							{
 								ReadNumber(args[1]), ReadNumber(args[3]), ReadNumber(args[5]),
-								ReadNumber(args[2]), ReadNumber(args[4]), ReadNumber(args[6]),
-								0, 0, 1
+									ReadNumber(args[2]), ReadNumber(args[4]), ReadNumber(args[6]),
+									0, 0, 1
 							};
 						}
 						else
@@ -1347,7 +1351,7 @@ namespace SkiaSharp.Extended.Svg
 
 				if (style.TryGetValue("stop-opacity", out string stopOpacity))
 				{
-					alpha = (byte)(ReadNumber(stopOpacity) * 255);
+					alpha = (byte) (ReadNumber(stopOpacity) * 255);
 				}
 
 				color = color.WithAlpha(alpha);
@@ -1440,7 +1444,7 @@ namespace SkiaSharp.Extended.Svg
 			ReadNumber(a?.Value);
 
 		private float? ReadOptionalNumber(XAttribute a) =>
-			a == null ? (float?)null : ReadNumber(a.Value);
+			a == null ? (float?) null : ReadNumber(a.Value);
 
 		private SKRect ReadRectangle(string s)
 		{
