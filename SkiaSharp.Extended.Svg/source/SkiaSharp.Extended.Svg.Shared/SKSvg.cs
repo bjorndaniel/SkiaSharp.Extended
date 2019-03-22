@@ -581,22 +581,23 @@ namespace SkiaSharp.Extended.Svg
 			if (CustomTypeFace != null)
 			{
 				paint.Typeface = CustomTypeFace;
-				if (fontStyle?.ContainsKey("font-family") ?? false)
+			}
+			else
+			{
+				if (fontStyle == null || !fontStyle.TryGetValue("font-family", out string ffamily) || string.IsNullOrWhiteSpace(ffamily))
 				{
-					fontStyle.Remove("font-family");
+					ffamily = paint.Typeface?.FamilyName;
 				}
+				var fweight = ReadFontWeight(fontStyle, paint.Typeface?.FontWeight ?? (int)SKFontStyleWeight.Normal);
+				var fwidth = ReadFontWidth(fontStyle, paint.Typeface?.FontWidth ?? (int)SKFontStyleWidth.Normal);
+				var fstyle = ReadFontStyle(fontStyle, paint.Typeface?.FontSlant ?? SKFontStyleSlant.Upright);
+				paint.Typeface = SKTypeface.FromFamilyName(ffamily, fweight, fwidth, fstyle);
+			}
+			if (fontStyle != null && fontStyle.TryGetValue("font-size", out string fsize) && !string.IsNullOrWhiteSpace(fsize))
+			{
+				paint.TextSize = ReadNumber(fsize);
 			}
 
-			if (fontStyle == null || !fontStyle.TryGetValue("font-family", out string ffamily) || string.IsNullOrWhiteSpace(ffamily))
-				ffamily = paint.Typeface?.FamilyName;
-			var fweight = ReadFontWeight(fontStyle, paint.Typeface?.FontWeight ?? (int) SKFontStyleWeight.Normal);
-			var fwidth = ReadFontWidth(fontStyle, paint.Typeface?.FontWidth ?? (int) SKFontStyleWidth.Normal);
-			var fstyle = ReadFontStyle(fontStyle, paint.Typeface?.FontSlant ?? SKFontStyleSlant.Upright);
-
-			paint.Typeface = SKTypeface.FromFamilyName(ffamily, fweight, fwidth, fstyle);
-
-			if (fontStyle != null && fontStyle.TryGetValue("font-size", out string fsize) && !string.IsNullOrWhiteSpace(fsize))
-				paint.TextSize = ReadNumber(fsize);
 		}
 
 		private static SKPathFillType ReadFillRule(Dictionary<string, string> style, SKPathFillType defaultFillRule = SKPathFillType.Winding)
