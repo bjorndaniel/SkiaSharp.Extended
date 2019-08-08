@@ -21,6 +21,6 @@
 
 		public float? BaselineShift { get; }
 
-		public float MeasureTextWidth() => Fill.MeasureText(Text);
+		public float MeasureTextWidth() => string.IsNullOrEmpty(Text) ? 0f :  Fill.MeasureText(Text);
 	}
 }
